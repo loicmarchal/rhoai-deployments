@@ -382,7 +382,7 @@ http://granite-embedding-predictor.llm.svc.cluster.local:8000/v1/embeddings
 
 ## Resource Optimization for Small Clusters
 
-On a 2-node ROSA HCP cluster (2 x 3,500m CPU), the default RHOAI installation plus the model deployment exceeded available capacity. The following changes were made to free resources:
+On a small cluster (e.g. 2-node ROSA HCP with 2 x 3,500m CPU), if the deployment exceeds available capacity, the following changes can be applied to free resources:
 
 ### Disable Non-Essential DSC Components
 
