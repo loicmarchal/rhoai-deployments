@@ -12,7 +12,9 @@ ModelCar packages the model as an OCI container image, eliminating the need for 
 - Brew registry credentials available in `~/.docker/config.json`
 - Kyverno installed with brew pull secret sync policies
 
-## Cluster Setup
+## Cluster Setup (optional)
+
+> **Optional:** If your cluster already has a brew pull secret, Kyverno, and the secret sync / imagePullSecret injection policies configured, jump directly to [Model Deployment](#model-deployment).
 
 ### 1. Create the Brew Pull Secret
 
@@ -354,7 +356,7 @@ oc exec deploy/granite-embedding-predictor -n llm -c kserve-container -- \
 oc exec deploy/granite-embedding-predictor -n llm -c kserve-container -- \
   curl -s http://localhost:8000/v1/embeddings \
     -H "Content-Type: application/json" \
-    -d '{"model": "ibm-granite/granite-embedding-english-r2", "input": "Hello, world!"}'
+    -d '{"model": "ibm-granite/granite-embedding-english-r2", "input": "What is Red Hat OpenShift AI?"}'
 ```
 
 Expected response (truncated):
@@ -378,6 +380,22 @@ From any pod in the cluster, the model is reachable at:
 
 ```
 http://granite-embedding-predictor.llm.svc.cluster.local:8000/v1/embeddings
+```
+
+### Access Locally via Port Forward
+
+To query the model directly from your machine, forward the service port:
+
+```bash
+oc port-forward -n llm svc/granite-embedding-predictor 8000:8000
+```
+
+Then, in a separate terminal:
+
+```bash
+curl -s http://localhost:8000/v1/embeddings \
+  -H "Content-Type: application/json" \
+  -d '{"model": "ibm-granite/granite-embedding-english-r2", "input": "What is Red Hat OpenShift AI?"}' | jq .
 ```
 
 ## Resource Optimization for Small Clusters
