@@ -1,9 +1,26 @@
-# Red Hat OpenShift AI 3.4 Installation Guide for ROSA
+# Red Hat OpenShift AI Installation Guide for ROSA
 
-This guide provides detailed instructions for installing Red Hat OpenShift AI (RHOAI) 3.4.0-ea.2 on a Red Hat OpenShift Service on AWS (ROSA) cluster.
+This guide provides detailed instructions for installing Red Hat OpenShift AI (RHOAI) on a Red Hat OpenShift Service on AWS (ROSA) cluster.
+
+## Choosing a Version
+
+The RHOAI version is determined by the **CatalogSource image tag** used in [Step 5](#step-5-create-rhoai-catalogsource). The image follows the pattern:
+
+```
+quay.io/rhoai/rhoai-fbc-fragment:rhoai-<VERSION>
+```
+
+For example:
+- `quay.io/rhoai/rhoai-fbc-fragment:rhoai-3.4` for RHOAI 3.4
+- `quay.io/rhoai/rhoai-fbc-fragment:rhoai-3.5` for RHOAI 3.5
+
+Replace the image tag in Step 5 with the version you want to install. The rest of the installation steps remain the same regardless of version.
+
+> **Note**: The examples in this guide use RHOAI **3.4** as a reference.
 
 ## Table of Contents
 
+- [Choosing a Version](#choosing-a-version)
 - [Prerequisites](#prerequisites)
 - [Architecture Overview](#architecture-overview)
 - [Installation Steps](#installation-steps)
@@ -848,10 +865,10 @@ oc patch subscription rhods-operator -n redhat-ods-operator \
 
 ## Summary
 
-This guide walked through installing RHOAI 3.4.0-ea.2 on ROSA using:
+This guide walked through installing RHOAI on ROSA using:
 
 1. **Kyverno** for automatic pull secret distribution
-2. **Custom CatalogSource** for RHOAI 3.4 packages
+2. **Custom CatalogSource** pointing to the desired RHOAI version (see [Choosing a Version](#choosing-a-version))
 3. **DataScienceCluster** for component configuration
 
 Key considerations:
