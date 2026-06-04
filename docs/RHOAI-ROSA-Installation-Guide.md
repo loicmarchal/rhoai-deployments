@@ -385,6 +385,14 @@ EOF
 oc get secret pull-secret-brew -n openshift-config -o yaml | \
   sed 's/namespace: openshift-config/namespace: openshift-marketplace/' | \
   oc apply -f -
+
+# Verify the secret contains credentials for registry.redhat.io (required for operator bundle)
+oc get secret pull-secret-brew -n openshift-marketplace -o jsonpath='{.data.\.dockerconfigjson}' | \
+  base64 -d | jq -r '.auths | keys[]'
+
+# Expected output should include at least:
+# - registry.redhat.io (required for RHOAI operator bundle)
+# - quay.io (required for RHOAI catalog)
 ```
 
 #### Wait for CatalogSource to be Ready
@@ -438,6 +446,25 @@ spec:
   name: rhods-operator
   source: rhoai-catalog
   sourceNamespace: openshift-marketplace
+EOF
+```
+
+The channel `beta` contains the early access for development/testing builds. To set it to a stable version, use `channel: stable-3.4`. To pin to a specific version within the channel, use `startingCSV`.
+
+```bash
+oc apply -f - <<'EOF'
+apiVersion: operators.coreos.com/v1alpha1
+kind: Subscription
+metadata:
+  name: rhods-operator
+  namespace: redhat-ods-operator
+spec:
+  channel: stable-3.4
+  installPlanApproval: Automatic
+  name: rhods-operator
+  source: rhoai-catalog
+  sourceNamespace: openshift-marketplace
+  startingCSV: rhods-operator.3.4.0
 EOF
 ```
 
