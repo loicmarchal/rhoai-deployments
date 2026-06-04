@@ -379,7 +379,7 @@ EOF
 
 #### Manually Copy Secret to openshift-marketplace
 
-The Kyverno policy may not sync the secret to openshift-marketplace immediately:
+**IMPORTANT**: The Kyverno sync policy only triggers when **new** namespaces are created. Since `openshift-marketplace` already exists, you **must** manually copy the secret:
 
 ```bash
 oc get secret pull-secret-brew -n openshift-config -o yaml | \
