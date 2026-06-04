@@ -204,17 +204,28 @@ spec:
 EOF
 ```
 
-#### Restart Admission Controller
+#### Grant Security Context Constraints
 
-If the Kyverno admission controller is in CrashLoopBackOff, restart it:
+OpenShift requires explicit SCC permissions for pods to run as specific UIDs. Kyverno containers run as UID 65534 (nobody), which is outside the default restricted range. Grant the `nonroot-v2` SCC to all Kyverno service accounts:
 
 ```bash
-# Delete the pod to trigger restart
-oc delete pod -n kyverno -l app.kubernetes.io/component=admission-controller
+oc adm policy add-scc-to-user nonroot-v2 -z kyverno-admission-controller -n kyverno
+oc adm policy add-scc-to-user nonroot-v2 -z kyverno-background-controller -n kyverno
+oc adm policy add-scc-to-user nonroot-v2 -z kyverno-cleanup-controller -n kyverno
+oc adm policy add-scc-to-user nonroot-v2 -z kyverno-reports-controller -n kyverno
+```
+
+#### Restart Kyverno Deployments
+
+After granting SCCs (or if the admission controller is in CrashLoopBackOff), restart all deployments:
+
+```bash
+# Restart all Kyverno deployments
+oc rollout restart deployment -n kyverno
 
 # Wait for pods to be ready
 sleep 15
-oc wait --for=condition=ready pod -l app.kubernetes.io/component=admission-controller -n kyverno --timeout=90s
+oc wait --for=condition=ready pod -l app.kubernetes.io/instance=kyverno -n kyverno --timeout=90s
 ```
 
 **Verification**:
