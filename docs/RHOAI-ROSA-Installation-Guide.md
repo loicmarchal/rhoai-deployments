@@ -25,7 +25,7 @@ Replace the image tag in Step 5 with the version you want to install. The rest o
 - [Architecture Overview](#architecture-overview)
 - [Installation Steps](#installation-steps)
   - [Step 1: Verify Cluster Access](#step-1-verify-cluster-access)
-  - [Step 2: Create Pull Secret for Brew Registry](#step-2-create-pull-secret-for-brew-registry)
+  - [Step 2: Create Pull Secret for Red Hat Registries](#step-2-create-pull-secret-for-red-hat-registries)
   - [Step 3: Install Kyverno Policy Engine](#step-3-install-kyverno-policy-engine)
   - [Step 4: Configure Kyverno Policies](#step-4-configure-kyverno-policies)
   - [Step 5: Create RHOAI CatalogSource](#step-5-create-rhoai-catalogsource)
@@ -59,11 +59,11 @@ Replace the image tag in Step 5 with the version you want to install. The rest o
 
 ### Credentials Required
 
-- Docker configuration file with registry credentials at `~/.docker/config.json`
+- Container registry credentials at `~/.docker/config.json` or `~/.config/containers/auth.json`
   - Must include credentials for:
-    - `brew.registry.redhat.io`
-    - `quay.io`
-    - `registry.redhat.io`
+    - `registry.redhat.io` (required for RHOAI operator bundle images)
+    - `quay.io` (required for RHOAI catalog and some component images)
+    - `brew.registry.redhat.io` (optional, only needed for internal/development builds)
 
 ---
 
@@ -104,21 +104,22 @@ oc get csv -A | grep -E 'opendatahub|rhods' || echo "No existing installations f
 
 ---
 
-### Step 2: Create Pull Secret for Brew Registry
+### Step 2: Create Pull Secret for Red Hat Registries
 
-Create a pull secret in the `openshift-config` namespace using your Docker credentials.
+Create a pull secret in the `openshift-config` namespace using your container registry credentials, typically from `~/.config/containers/auth.json` (Podman default) or `~/.docker/config.json` (Docker default).
 
 ```bash
-# Create the pull secret from your Docker config
-oc create secret generic pull-secret-brew \
-  --from-file=.dockerconfigjson=~/.docker/config.json \
+# Create the pull secret from your container registry credentials
+# Use ~/.docker/config.json OR ~/.config/containers/auth.json depending on where your credentials are stored
+oc create secret generic pull-secret-redhat \
+  --from-file=.dockerconfigjson=~/.config/containers/auth.json \
   --type=kubernetes.io/dockerconfigjson \
   -n openshift-config
 ```
 
 **Verification**:
 ```bash
-oc get secret pull-secret-brew -n openshift-config
+oc get secret pull-secret-redhat -n openshift-config
 ```
 
 ---
@@ -300,12 +301,12 @@ spec:
     generate:
       apiVersion: v1
       kind: Secret
-      name: pull-secret-brew
+      name: pull-secret-redhat
       namespace: "{{request.object.metadata.name}}"
       synchronize: true
       clone:
         namespace: openshift-config
-        name: pull-secret-brew
+        name: pull-secret-redhat
 EOF
 ```
 
@@ -332,7 +333,7 @@ spec:
       patchStrategicMerge:
         spec:
           imagePullSecrets:
-          - name: pull-secret-brew
+          - name: pull-secret-redhat
 EOF
 ```
 
@@ -373,7 +374,7 @@ spec:
     registryPoll:
       interval: 10m
   secrets:
-  - pull-secret-brew
+  - pull-secret-redhat
 EOF
 ```
 
@@ -382,12 +383,12 @@ EOF
 **IMPORTANT**: The Kyverno sync policy only triggers when **new** namespaces are created. Since `openshift-marketplace` already exists, you **must** manually copy the secret:
 
 ```bash
-oc get secret pull-secret-brew -n openshift-config -o yaml | \
+oc get secret pull-secret-redhat -n openshift-config -o yaml | \
   sed 's/namespace: openshift-config/namespace: openshift-marketplace/' | \
   oc apply -f -
 
 # Verify the secret contains credentials for registry.redhat.io (required for operator bundle)
-oc get secret pull-secret-brew -n openshift-marketplace -o jsonpath='{.data.\.dockerconfigjson}' | \
+oc get secret pull-secret-redhat -n openshift-marketplace -o jsonpath='{.data.\.dockerconfigjson}' | \
   base64 -d | jq -r '.auths | keys[]'
 
 # Expected output should include at least:
@@ -731,10 +732,10 @@ Access the dashboard URL in your browser.
 **Solution**:
 ```bash
 # Verify secret exists in openshift-marketplace
-oc get secret pull-secret-brew -n openshift-marketplace
+oc get secret pull-secret-redhat -n openshift-marketplace
 
 # If missing, manually copy it
-oc get secret pull-secret-brew -n openshift-config -o yaml | \
+oc get secret pull-secret-redhat -n openshift-config -o yaml | \
   sed 's/namespace: openshift-config/namespace: openshift-marketplace/' | \
   oc apply -f -
 
