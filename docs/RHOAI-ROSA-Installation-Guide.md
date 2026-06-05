@@ -59,7 +59,7 @@ Replace the image tag in Step 5 with the version you want to install. The rest o
 
 ### Credentials Required
 
-- Container registry credentials at `~/.docker/config.json` or `~/.config/containers/auth.json`
+- Container registry credentials at `~/.config/containers/auth.json` or `~/.docker/config.json`
   - Must include credentials for:
     - `registry.redhat.io` (required for RHOAI operator bundle images)
     - `quay.io` (required for RHOAI catalog and some component images)
@@ -110,7 +110,7 @@ Create a pull secret in the `openshift-config` namespace using your container re
 
 ```bash
 # Create the pull secret from your container registry credentials
-# Use ~/.docker/config.json OR ~/.config/containers/auth.json depending on where your credentials are stored
+# Use ~/.config/containers/auth.json OR ~/.docker/config.json depending on where your credentials are stored
 oc create secret generic pull-secret-redhat \
   --from-file=.dockerconfigjson=~/.config/containers/auth.json \
   --type=kubernetes.io/dockerconfigjson \
